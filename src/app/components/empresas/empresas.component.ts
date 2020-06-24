@@ -9,38 +9,43 @@ import { ModalDialogService } from "../../services/modal-dialog.service";
   templateUrl: "./empresas.component.html",
   styleUrls: ["./empresas.component.css"]
 })
-export class EmpresasComponent implements OnInit {
-  Titulo = "Empresas";
-  TituloAccion = {
+export class ArticulosComponent implements OnInit {
+  Titulo = "Articulos";
+  TituloAccionABMC = {
     A: "(Agregar)",
     B: "(Eliminar)",
     M: "(Modificar)",
     C: "(Consultar)",
     L: "(Listado)"
   };
-  Accion = "L";
+  AccionABMC = "L"; // inicialmente inicia en el listado de articulos (buscar con parametros)
   Mensajes = {
     SD: " No se encontraron registros...",
     RD: " Revisar los datos ingresados..."
   };
+
   Lista: Empresa[] = [];
   RegistrosTotal: number;
   SinBusquedasRealizadas = true;
 
   Pagina = 1; // inicia pagina 1
+
   FormFiltro: FormGroup;
   FormReg: FormGroup;
   submitted = false;
 
   constructor(
     public formBuilder: FormBuilder,
-    private empresasService: EmpresasService,
+    //private articulosService: MockArticulosService,
+    private empresasServicio: EmpresasService,
+    //private articulosFamiliasService: ArticulosFamiliasService,
     private modalDialogService: ModalDialogService
   ) {}
 
   ngOnInit() {
     this.FormFiltro = this.formBuilder.group({
-      RazonSocial: [""]
+      Nombre: [""],
+      Activo: [null]
     });
     this.FormReg = this.formBuilder.group({
       IdArticulo: [0],
@@ -66,29 +71,10 @@ export class EmpresasComponent implements OnInit {
       ],
       Activo: [true]
     });
-
-    this.GetEmpresa();
-  }
-
-  GetEmpresa() {
-    this.empresasService.getEmp().subscribe((emp: Empresa[]) => {
-      this.Lista = emp;
-    });
-  }
-
-// Buscar segun los filtros, establecidos en FormReg
-  Buscar() {
-    this.SinBusquedasRealizadas = false;
-    this.empresasService
-      .getEmp(this.FormFiltro.value.Nombre, this.FormFiltro.value.Activo, this.Pagina)
-      .subscribe((res: any) => {
-        this.Lista = res.Lista;
-        this.RegistrosTotal = res.RegistrosTotal;
-      });
   }
 
   Agregar() {
-    this.Accion = "A";
+    this.AccionABMC = "A";
     this.FormReg.reset(this.FormReg.value);
 
     this.submitted = false;
@@ -96,21 +82,112 @@ export class EmpresasComponent implements OnInit {
     this.FormReg.markAsUntouched();
   }
 
-  ActivarDesactivar(Emp) {
+  // Buscar segun los filtros, establecidos en FormReg
+  Buscar() {
+    this.SinBusquedasRealizadas = false;
+    this.empresasServicio
+      .getEmp(
+        this.FormFiltro.value.Nombre,
+        this.FormFiltro.value.Activo,
+        this.Pagina
+      )
+      .subscribe((res: any) => {
+        this.Lista = res.Lista;
+        this.RegistrosTotal = res.RegistrosTotal;
+      });
+  }
+
+  // Obtengo un registro especifico según el Id
+  BuscarPorId(Emp, AccionABMC) {
+    window.scroll(0, 0); // ir al incio del scroll
+
+    this.empresasServicio.getEmpId(Emp.IdArticulo).subscribe((res: any) => {
+      this.FormReg.patchValue(res);
+
+      //formatear fecha de  ISO 8061 a string dd/MM/yyyy
+      var arrFecha = res.FechaAlta.substr(0, 10).split("-");
+      this.FormReg.controls.FechaAlta.patchValue(
+        arrFecha[2] + "/" + arrFecha[1] + "/" + arrFecha[0]
+      );
+
+      this.AccionABMC = AccionABMC;
+    });
+  }
+
+  Consultar(Dto) {
+    this.BuscarPorId(Dto, "C");
+  }
+
+  // comienza la modificacion, luego la confirma con el metodo Grabar
+  Modificar(Dto) {
+    if (!Dto.Activo) {
+      this.modalDialogService.Alert(
+        "No puede modificarse un registro Inactivo."
+      );
+      return;
+    }
+    this.submitted = false;
+    this.FormReg.markAsPristine();
+    this.FormReg.markAsUntouched();
+    this.BuscarPorId(Dto, "M");
+  }
+
+  // grabar tanto altas como modificaciones
+  Grabar() {
+    this.submitted = true;
+    // verificar que los validadores esten OK
+    if (this.FormReg.invalid) {
+      return;
+    }
+
+    //hacemos una copia de los datos del formulario, para modificar la fecha y luego enviarlo al servidor
+    const itemCopy = { ...this.FormReg.value };
+
+    //convertir fecha de string dd/MM/yyyy a ISO para que la entienda webapi
+    var arrFecha = itemCopy.FechaAlta.substr(0, 10).split("/");
+    if (arrFecha.length == 3)
+      itemCopy.FechaAlta = new Date(
+        arrFecha[2],
+        arrFecha[1] - 1,
+        arrFecha[0]
+      ).toISOString();
+
+    // agregar post
+    if (itemCopy.IdArticulo == 0 || itemCopy.IdArticulo == null) {
+      this.empresasServicio.post(itemCopy).subscribe((res: any) => {
+        this.Volver();
+        this.modalDialogService.Alert("Registro agregado correctamente.");
+        this.Buscar();
+      });
+    } else {
+      // modificar put
+      this.empresasServicio
+        .put(itemCopy.IdArticulo, itemCopy)
+        .subscribe((res: any) => {
+          this.Volver();
+          this.modalDialogService.Alert("Registro modificado correctamente.");
+          this.Buscar();
+        });
+    }
+  }
+
+  // representa la baja logica
+  ActivarDesactivar(Dto) {
     this.modalDialogService.Confirm(
-      "Esta seguro de eliminar este registro?",
+      "Esta seguro de Eliminar este registro?",
       undefined,
       undefined,
       undefined,
       () =>
-        this.empresasService
-          .delete(Emp.IdEmpresa)
+        this.articulosService
+          .delete(Dto.IdArticulo)
           .subscribe((res: any) => this.Buscar()),
       null
     );
   }
 
+  // Volver desde Agregar/Modificar
   Volver() {
-    this.Accion = "L";
+    this.AccionABMC = "L";
   }
 }

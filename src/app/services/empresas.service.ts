@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { HttpClient } from "@angular/common/http";
+import { HttpClient, HttpParams } from "@angular/common/http";
 import { Observable } from "rxjs";
 import { Empresa } from "../models/Empresa";
 
@@ -11,10 +11,29 @@ export class EmpresasService {
   constructor(private httpClient: HttpClient) {
     this.resourceURL = "https://pavii.ddns.net/api/empresas/";
   }
-  getEmp(): Observable<Empresa[]> {
-    return this.httpClient.get<Empresa[]>(this.resourceURL);
+  get(Nombre: string, Pagina: number) {
+    let params = new HttpParams();
+    if (Nombre != null) {
+      params = params.append("Nombre", Nombre);
+    }
+    params = params.append("Pagina", Pagina.toString());
+
+    return this.httpClient.get(this.resourceURL, { params: params });
   }
-  getEmpId(id: number) {
-    return this.httpClient.get(this.resourceURL + id);
+
+  getById(Id: number) {
+    return this.httpClient.get(this.resourceURL + Id);
+  }
+
+  post(obj: Empresa) {
+    return this.httpClient.post(this.resourceURL, obj);
+  }
+
+  put(Id: number, obj: Empresa) {
+    return this.httpClient.put(this.resourceURL + Id, obj);
+  }
+
+  delete(Id) {
+    return this.httpClient.delete(this.resourceURL + Id);
   }
 }
