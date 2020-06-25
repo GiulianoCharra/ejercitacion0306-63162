@@ -89,22 +89,22 @@
 		</div>
 
   <!--campo IdEmpresa-->
-		<div class="form-group row">
+		<div class="form-group row" *ngIf="AccionABMC=='M'">
 			<label class="col-form-label col-sm-2 col-sm-offset-2" for="IdEmpresa">
-                Id Empresa <span class="text-danger">*</span>
-            </label>
+		                Id Empresa <span class="text-danger">*</span>
+		            </label>
 			<div class="col-sm-6" ng-model="all">
 				<input type="text" name="IdEmpresa" class="form-control" formControlName="IdEmpresa"  [readonly]="EstadoRead"
-        [ngClass]="{'is-invalid': (FormReg.controls.IdEmpresa.touched || submitted)  
-            && FormReg.controls.IdEmpresa.errors}" />
+		        [ngClass]="{'is-invalid': (FormReg.controls.IdEmpresa.touched || submitted)  
+		            && FormReg.controls.IdEmpresa.errors}" />
 				<span class="text-danger" *ngIf="(FormReg.controls.IdEmpresa.touched || submitted) 
-                        && FormReg.controls.IdEmpresa.errors?.required">
-                    Dato requerido.
-                </span>
+		                        && FormReg.controls.IdEmpresa.errors?.required">
+		                    Dato requerido.
+		                </span>
 				<span class="text-danger" *ngIf="(FormReg.controls.IdEmpresa.touched || submitted) 
-                        && FormReg.controls.IdEmpresa.errors?.pattern">
-                    Dato numérico, 1 a 7 dígitos.
-                </span>
+		                        && FormReg.controls.IdEmpresa.errors?.pattern">
+		                    Dato numérico, 1 a 7 dígitos.
+		                </span>
 			</div>
 		</div>
 
