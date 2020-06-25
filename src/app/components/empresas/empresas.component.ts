@@ -12,6 +12,7 @@ import { ModalDialogService } from "../../services/modal-dialog.service";
 export class EmpresasComponent implements OnInit {
   EstadoRead: Boolean = false;
   Titulo = "Empresas";
+
   TituloAccionABMC = {
     A: "(Agregar)",
     B: "(Eliminar)",
@@ -19,6 +20,7 @@ export class EmpresasComponent implements OnInit {
     C: "(Consultar)",
     L: "(Listado)"
   };
+
   AccionABMC = "L"; // inicialmente inicia en el listado de articulos (buscar con parametros)
   Mensajes = {
     SD: " No se encontraron registros...",
@@ -44,9 +46,18 @@ export class EmpresasComponent implements OnInit {
       RazonSocial: [""]
     });
     this.FormReg = this.formBuilder.group({
-      RazonSocial: ["",[Validators.required, Validators.minLength(2), Validators.maxLength(55)] ],
-      IdEmpresa: [null, [Validators.required, Validators.pattern("[0-9]{1,7}")]],
-      CantidadEmpleados: [null, [Validators.required, Validators.pattern("[0-9]{1,7}")]],
+      RazonSocial: [
+        "",
+        [Validators.required, Validators.minLength(2), Validators.maxLength(55)]
+      ],
+      IdEmpresa: [
+        null,
+        [Validators.required, Validators.pattern("[0-9]{1,7}")]
+      ],
+      CantidadEmpleados: [
+        null,
+        [Validators.required, Validators.pattern("[0-9]{1,7}")]
+      ],
       FechaFundacion: [
         "",
         [
@@ -55,7 +66,7 @@ export class EmpresasComponent implements OnInit {
             "(0[1-9]|[12][0-9]|3[01])[-/](0[1-9]|1[012])[-/](19|20)[0-9]{2}"
           )
         ]
-      ],
+      ]
     });
   }
 
@@ -69,10 +80,9 @@ export class EmpresasComponent implements OnInit {
   // Buscar segun los filtros, establecidos en FormReg
   Buscar() {
     this.SinBusquedasRealizadas = false;
-    this.empresasServicio
-      .get().subscribe((res: Empresa[]) => {
-        this.Lista = res;
-      });
+    this.empresasServicio.get().subscribe((res: Empresa[]) => {
+      this.Lista = res;
+    });
   }
 
   // Obtengo un registro especifico según el Id
@@ -125,21 +135,23 @@ export class EmpresasComponent implements OnInit {
       ).toISOString();
 
     // agregar post
-    if (itemCopy.IdEmpresa == 0 || itemCopy.IdEmpresa == null) {
+    if (this.AccionABMC == "A") {
       this.empresasServicio.post(itemCopy).subscribe((res: any) => {
         this.Volver();
         this.modalDialogService.Alert("Registro agregado correctamente.");
         this.Buscar();
       });
     } else {
-      // modificar put
-      this.empresasServicio
-        .put(itemCopy.IdEmpresa, itemCopy)
-        .subscribe((res: any) => {
-          this.Volver();
-          this.modalDialogService.Alert("Registro modificado correctamente.");
-          this.Buscar();
-        });
+      if ((this.AccionABMC = "M")) {
+        // modificar put
+        this.empresasServicio
+          .put(itemCopy.IdEmpresa, itemCopy)
+          .subscribe((res: any) => {
+            this.Volver();
+            this.modalDialogService.Alert("Registro modificado correctamente.");
+            this.Buscar();
+          });
+      }
     }
   }
 
@@ -161,6 +173,6 @@ export class EmpresasComponent implements OnInit {
   // Volver desde Agregar/Modificar
   Volver() {
     this.AccionABMC = "L";
-    this.EstadoRead =false;
+    this.EstadoRead = false;
   }
 }
