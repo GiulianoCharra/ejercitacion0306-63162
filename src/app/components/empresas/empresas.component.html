@@ -89,12 +89,12 @@
 		</div>
 
   <!--campo IdEmpresa-->
-		<div class="form-group row" >
+		<div class="form-group row">
 			<label class="col-form-label col-sm-2 col-sm-offset-2" for="IdEmpresa">
                 Id Empresa <span class="text-danger">*</span>
             </label>
 			<div class="col-sm-6" ng-model="all">
-				<input type="text" name="IdEmpresa" class="form-control" formControlName="IdEmpresa" [readonly]="EstadoRead"
+				<input type="text" name="IdEmpresa" class="form-control" formControlName="IdEmpresa"  [readonly]="EstadoRead"
         [ngClass]="{'is-invalid': (FormReg.controls.IdEmpresa.touched || submitted)  
             && FormReg.controls.IdEmpresa.errors}" />
 				<span class="text-danger" *ngIf="(FormReg.controls.IdEmpresa.touched || submitted) 
