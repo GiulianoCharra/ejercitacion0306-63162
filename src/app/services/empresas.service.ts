@@ -11,14 +11,8 @@ export class EmpresasService {
   constructor(private httpClient: HttpClient) {
     this.resourceURL = "https://pavii.ddns.net/api/empresas/";
   }
-  get(Nombre: string, Pagina: number) {
-    let params = new HttpParams();
-    if (Nombre != null) {
-      params = params.append("Nombre", Nombre);
-    }
-    params = params.append("Pagina", Pagina.toString());
-
-    return this.httpClient.get(this.resourceURL, { params: params });
+  get():Observable<Empresa[]> {
+    return this.httpClient.get<Empresa[]>(this.resourceURL);
   }
 
   getById(Id: number) {

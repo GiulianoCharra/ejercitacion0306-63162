@@ -9,8 +9,9 @@ import { ModalDialogService } from "../../services/modal-dialog.service";
   templateUrl: "./empresas.component.html",
   styleUrls: ["./empresas.component.css"]
 })
-export class ArticulosComponent implements OnInit {
-  Titulo = "Articulos";
+export class EmpresasComponent implements OnInit {
+  EstadoRead: Boolean = false;
+  Titulo = "Empresas";
   TituloAccionABMC = {
     A: "(Agregar)",
     B: "(Eliminar)",
@@ -25,11 +26,7 @@ export class ArticulosComponent implements OnInit {
   };
 
   Lista: Empresa[] = [];
-  RegistrosTotal: number;
   SinBusquedasRealizadas = true;
-
-  Pagina = 1; // inicia pagina 1
-
   FormFiltro: FormGroup;
   FormReg: FormGroup;
   submitted = false;
@@ -44,23 +41,13 @@ export class ArticulosComponent implements OnInit {
 
   ngOnInit() {
     this.FormFiltro = this.formBuilder.group({
-      Nombre: [""],
-      Activo: [null]
+      RazonSocial: [""]
     });
     this.FormReg = this.formBuilder.group({
-      IdArticulo: [0],
-      Nombre: [
-        "",
-        [Validators.required, Validators.minLength(4), Validators.maxLength(55)]
-      ],
-      Precio: [null, [Validators.required, Validators.pattern("[0-9]{1,7}")]],
-      Stock: [null, [Validators.required, Validators.pattern("[0-9]{1,7}")]],
-      CodigoDeBarra: [
-        "",
-        [Validators.required, Validators.pattern("[0-9]{13}")]
-      ],
-      IdArticuloFamilia: ["", [Validators.required]],
-      FechaAlta: [
+      RazonSocial: ["",[Validators.required, Validators.minLength(2), Validators.maxLength(55)] ],
+      IdEmpresa: [null, [Validators.required, Validators.pattern("[0-9]{1,7}")]],
+      CantidadEmpleados: [null, [Validators.required, Validators.pattern("[0-9]{1,7}")]],
+      FechaFundacion: [
         "",
         [
           Validators.required,
@@ -69,16 +56,13 @@ export class ArticulosComponent implements OnInit {
           )
         ]
       ],
-      Activo: [true]
     });
   }
 
   Agregar() {
     this.AccionABMC = "A";
-    this.FormReg.reset(this.FormReg.value);
-
+    this.FormReg.reset();
     this.submitted = false;
-    //this.FormReg.markAsPristine();
     this.FormReg.markAsUntouched();
   }
 
@@ -86,14 +70,8 @@ export class ArticulosComponent implements OnInit {
   Buscar() {
     this.SinBusquedasRealizadas = false;
     this.empresasServicio
-      .getEmp(
-        this.FormFiltro.value.Nombre,
-        this.FormFiltro.value.Activo,
-        this.Pagina
-      )
-      .subscribe((res: any) => {
-        this.Lista = res.Lista;
-        this.RegistrosTotal = res.RegistrosTotal;
+      .get().subscribe((res: Empresa[]) => {
+        this.Lista = res;
       });
   }
 
@@ -101,35 +79,29 @@ export class ArticulosComponent implements OnInit {
   BuscarPorId(Emp, AccionABMC) {
     window.scroll(0, 0); // ir al incio del scroll
 
-    this.empresasServicio.getEmpId(Emp.IdArticulo).subscribe((res: any) => {
+    this.empresasServicio.getById(Emp.IdEmpresa).subscribe((res: any) => {
       this.FormReg.patchValue(res);
-
       //formatear fecha de  ISO 8061 a string dd/MM/yyyy
-      var arrFecha = res.FechaAlta.substr(0, 10).split("-");
-      this.FormReg.controls.FechaAlta.patchValue(
+      var arrFecha = res.FechaFundacion.substr(0, 10).split("-");
+      this.FormReg.controls.FechaFundacion.patchValue(
         arrFecha[2] + "/" + arrFecha[1] + "/" + arrFecha[0]
       );
-
       this.AccionABMC = AccionABMC;
     });
   }
 
-  Consultar(Dto) {
-    this.BuscarPorId(Dto, "C");
+  Consultar(Emp) {
+    this.BuscarPorId(Emp, "C");
   }
 
   // comienza la modificacion, luego la confirma con el metodo Grabar
-  Modificar(Dto) {
-    if (!Dto.Activo) {
-      this.modalDialogService.Alert(
-        "No puede modificarse un registro Inactivo."
-      );
-      return;
-    }
+  Modificar(Emp) {
+    this.EstadoRead = true;
     this.submitted = false;
     this.FormReg.markAsPristine();
     this.FormReg.markAsUntouched();
-    this.BuscarPorId(Dto, "M");
+    this.FormReg.controls.IdEmpresa.disabled;
+    this.BuscarPorId(Emp, "M");
   }
 
   // grabar tanto altas como modificaciones
@@ -144,16 +116,16 @@ export class ArticulosComponent implements OnInit {
     const itemCopy = { ...this.FormReg.value };
 
     //convertir fecha de string dd/MM/yyyy a ISO para que la entienda webapi
-    var arrFecha = itemCopy.FechaAlta.substr(0, 10).split("/");
+    var arrFecha = itemCopy.FechaFundacion.substr(0, 10).split("/");
     if (arrFecha.length == 3)
-      itemCopy.FechaAlta = new Date(
+      itemCopy.FechaFundacion = new Date(
         arrFecha[2],
         arrFecha[1] - 1,
         arrFecha[0]
       ).toISOString();
 
     // agregar post
-    if (itemCopy.IdArticulo == 0 || itemCopy.IdArticulo == null) {
+    if (itemCopy.IdEmpresa == 0 || itemCopy.IdEmpresa == null) {
       this.empresasServicio.post(itemCopy).subscribe((res: any) => {
         this.Volver();
         this.modalDialogService.Alert("Registro agregado correctamente.");
@@ -162,7 +134,7 @@ export class ArticulosComponent implements OnInit {
     } else {
       // modificar put
       this.empresasServicio
-        .put(itemCopy.IdArticulo, itemCopy)
+        .put(itemCopy.IdEmpresa, itemCopy)
         .subscribe((res: any) => {
           this.Volver();
           this.modalDialogService.Alert("Registro modificado correctamente.");
@@ -172,15 +144,15 @@ export class ArticulosComponent implements OnInit {
   }
 
   // representa la baja logica
-  ActivarDesactivar(Dto) {
+  Eliminar(Emp) {
     this.modalDialogService.Confirm(
       "Esta seguro de Eliminar este registro?",
       undefined,
       undefined,
       undefined,
       () =>
-        this.articulosService
-          .delete(Dto.IdArticulo)
+        this.empresasServicio
+          .delete(Emp.IdEmpresa)
           .subscribe((res: any) => this.Buscar()),
       null
     );
@@ -189,5 +161,6 @@ export class ArticulosComponent implements OnInit {
   // Volver desde Agregar/Modificar
   Volver() {
     this.AccionABMC = "L";
+    this.EstadoRead =false;
   }
 }
