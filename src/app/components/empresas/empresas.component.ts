@@ -75,6 +75,7 @@ export class EmpresasComponent implements OnInit {
     this.FormReg.reset();
     this.submitted = false;
     this.FormReg.markAsUntouched();
+    this.FormReg.controls.IdEmpresa.markAsPristine;
   }
 
   // Buscar segun los filtros, establecidos en FormReg
